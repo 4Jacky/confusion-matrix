@@ -1,0 +1,39 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+# 设置中文字体，SimHei是黑体字体，支持中文显示
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']  # 用黑体显示中文
+plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像时负号'-'显示为方块的问题
+
+# 新的类别标签和混淆矩阵
+classes_3x3 = ['正弦波', '三角波', '梯形波']  # 新的类别标签
+confusion_matrix = np.array([[1207, 0, 0],
+                             [0, 1447, 0],
+                             [0, 0, 1066]], dtype=np.float64)  # 3x3矩阵
+
+# 绘制3x3混淆矩阵
+plt.imshow(confusion_matrix, interpolation='nearest', cmap=plt.cm.Oranges)  # 按照像素显示矩阵
+plt.title('XGBoost(频谱图输入)')
+plt.colorbar()
+
+tick_marks = np.arange(len(classes_3x3))
+plt.xticks(tick_marks, classes_3x3, rotation=-45)
+plt.yticks(tick_marks, classes_3x3)
+
+thresh = confusion_matrix.max() / 2.
+
+# 迭代遍历矩阵的元素并在图上显示数值
+iters = np.reshape([[[i, j] for j in range(3)] for i in range(3)], (confusion_matrix.size, 2))
+for i, j in iters:
+    plt.text(j, i, format(confusion_matrix[i, j]), ha="center", va="center",
+             color="white" if confusion_matrix[i, j] > thresh else "black")
+
+plt.ylabel('真实值')
+plt.xlabel('预测值')
+plt.tight_layout()
+
+# 保存图片
+plt.savefig('XGBoost_spectrogram.png', dpi=300, bbox_inches='tight')  # 保存为高分辨率的PNG图片
+
+plt.show()
