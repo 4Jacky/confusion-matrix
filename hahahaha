@@ -1,0 +1,165 @@
+# just have fun. I don't know its functions either
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, confusion_matrix
+from scipy.fftpack import fft
+from sklearn.svm import SVR  # 使用SVR进行回归
+from sklearn.metrics import mean_squared_error
+
+# 生成示例数据（模拟磁通密度波形数据）
+def generate_waveform_data(num_samples=500):
+    np.random.seed(42)
+    data = []
+    labels = []
+    for _ in range(num_samples):
+        waveform_type = np.random.choice(['sine', 'triangle', 'trapezoid'])
+        t = np.linspace(0, 1, 1024)
+
+        if waveform_type == 'sine':
+            B = np.sin(2 * np.pi * 50 * t)
+            labels.append(1)
+        elif waveform_type == 'triangle':
+            B = 2 * np.abs(t - np.floor(t + 0.5))  # 修正
+            labels.append(2)
+        else:
+            B = np.piecewise(t, [t < 0.25, (t >= 0.25) & (t < 0.75), t >= 0.75], [1, -1, 1])
+            labels.append(3)
+
+        max_val = np.max(B)
+        min_val = np.min(B)
+        mean_val = np.mean(B)
+        peak_to_peak = max_val - min_val  # 修正
+        fft_vals = np.abs(fft(B))[:5]
+        data.append([max_val, min_val, mean_val, peak_to_peak] + list(fft_vals))
+
+    return np.array(data), np.array(labels)
+
+# 生成数据
+X, y = generate_waveform_data(num_samples=500)
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# 数据归一化
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 使用SVM进行分类
+svm_model = SVC(kernel='linear')
+svm_model.fit(X_train_scaled, y_train)
+
+# 在测试集上进行预测
+y_pred = svm_model.predict(X_test_scaled)
+
+# 计算准确率和混淆矩阵
+accuracy = accuracy_score(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# 打印结果
+print("分类准确率：", accuracy)
+print("混淆矩阵：")
+print(conf_matrix)
+
+# 可视化混淆矩阵
+plt.imshow(conf_matrix, cmap='Blues')
+plt.title('Confusion Matrix')
+plt.colorbar()
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.xticks(ticks=[0, 1, 2], labels=['正弦波', '三角波', '梯形波'])
+plt.yticks(ticks=[0, 1, 2], labels=['正弦波', '三角波', '梯形波'])
+plt.show()
+
+def generate_synthetic_data(num_samples=500):
+    np.random.seed(42)
+    data = []
+    for _ in range(num_samples):
+        # 随机生成温度（25-90度），频率（50kHz-500kHz），磁通密度峰值（0.1T-0.5T）
+        T = np.random.uniform(25, 90)
+        f = np.random.uniform(50000, 500000)
+        B_peak = np.random.uniform(0.1, 0.5)
+
+        # 生成系数：假设的斯坦麦茨方程参数和温度修正系数
+        k = 1e-5
+        alpha = 1.5
+        beta = 2.3
+        gamma = 0.01  # 温度修正系数
+
+        # 计算损耗，加入随机噪声
+        P = k * (f**alpha) * (B_peak**beta) * (T**gamma) + np.random.normal(0, 0.1)
+        data.append([T, f, B_peak, P])
+
+    return pd.DataFrame(data, columns=['Temperature', 'Frequency', 'B_peak', 'Loss'])
+
+# 生成数据
+df = generate_synthetic_data()
+
+# 划分训练集和测试集
+X = df[['Temperature', 'Frequency', 'B_peak']]
+y = df['Loss']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# 省略部分内容
+
+
+
+# 生成示例数据：温度、频率、磁通密度峰值以及相应的损耗
+def generate_synthetic_data(num_samples=500):
+    np.random.seed(42)
+    data = []
+    for _ in range(num_samples):
+        # 随机生成温度（25-90度），频率（50kHz-500kHz），磁通密度峰值（0.1T-0.5T）
+        T = np.random.uniform(25, 90)
+        f = np.random.uniform(50000, 500000)
+        B_peak = np.random.uniform(0.1, 0.5)
+
+        # 生成系数：假设的斯坦麦茨方程参数和温度修正系数
+        k = 1e-5
+        alpha = 1.5
+        beta = 2.3
+        gamma = 0.01  # 温度修正系数
+
+        # 计算损耗，加入随机噪声
+        P = k * (f**alpha) * (B_peak**beta) * (T**gamma) + np.random.normal(0, 0.1)
+        data.append([T, f, B_peak, P])
+
+    return pd.DataFrame(data, columns=['Temperature', 'Frequency', 'B_peak', 'Loss'])
+
+# 生成数据
+df = generate_synthetic_data()
+
+# 划分训练集和测试集
+X = df[['Temperature', 'Frequency', 'B_peak']]
+y = df['Loss']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# 创建SVM回归模型实例
+svm_model = SVR(kernel='linear')
+
+# 拟合模型
+svm_model.fit(X_train, y_train)
+
+# 预测测试集
+y_pred = svm_model.predict(X_test)
+
+# 计算均方误差
+mse = mean_squared_error(y_test, y_pred)
+print(f"测试集的均方误差（MSE）：{mse}")
+
+# 打印模型的系数
+print("模型系数：")
+# SVM模型不直接提供intercept和coef，使用support vectors
+print(f"Support Vectors: {svm_model.support_vectors_}")
+
+# 绘制真实值和预测值的对比图
+plt.scatter(y_test, y_pred)
+plt.xlabel('真实损耗值')
+plt.ylabel('预测损耗值')
+plt.title('真实值 vs 预测值')
+plt.grid(True)
+plt.show()
